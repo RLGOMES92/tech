@@ -1,15 +1,28 @@
-# Tech MM
+# 🔧 Tech MM — Site Comercial
 
-Site comercial para assistência técnica e acessórios.
+Site comercial desenvolvido para uma assistência técnica e operação de acessórios, com foco em **presença digital, apresentação de serviços e geração de contato**.
 
-## Recursos identificados
+## 💼 Problema de negócio
+
+Negócios locais precisam apresentar serviços e diferenciais rapidamente, principalmente no celular, e facilitar o contato com potenciais clientes.
+
+## 💡 Solução desenvolvida
+
+Uma presença digital responsiva com identidade visual tecnológica, seções comerciais e elementos de contato.
+
+## ✨ Funcionalidades
+
 - Navegação responsiva
+- Apresentação de serviços
 - Seções comerciais
-- Identidade visual tecnológica
-- Elementos de contato e apresentação
+- Identidade visual personalizada
+- Elementos de contato
+- Experiência mobile
 
-## Objetivo
-Apresentar serviços de assistência técnica e acessórios em uma presença digital profissional.
+## 🎯 Aplicação comercial
 
-## Autor
-Rodrigo Gomes
+Este modelo pode ser adaptado para **assistências técnicas, oficinas, prestadores de serviços, lojas locais e negócios que dependem de geração de contatos pelo digital**.
+
+---
+
+**Rodrigo Gomes — Desenvolvedor Full Stack & Especialista em Agentes de IA**
