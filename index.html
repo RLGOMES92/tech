@@ -101,6 +101,8 @@ input:focus,select:focus{outline:2px solid var(--bl);outline-offset:0}
 <div id="modal"></div><div id="authGate"><form class="box" id="loginForm"><h2>☁ Conta e sincronização</h2><p style="color:var(--mu);font-size:13px">Entre na sua conta ou crie seu próprio acesso com e-mail e senha. Seus dados ficam separados dos dados de outras lojas.</p><label style="font-size:12px;color:var(--mu)">E-mail</label><input id="loginEmail" type="email" autocomplete="username" required placeholder="seu@email.com"><label style="font-size:12px;color:var(--mu);display:block;margin-top:10px">Senha</label><input id="loginPassword" type="password" autocomplete="current-password" minlength="8" required placeholder="Mínimo de 8 caracteres"><p id="loginError" style="color:var(--rd);font-size:12px"></p><div class="row" style="flex-wrap:wrap"><button type="button" class="btn" id="offlineMode">Continuar offline</button><button class="btn" type="submit" value="signup" name="authMode">Criar minha conta</button><button class="btn pri" type="submit" value="signin" name="authMode">Entrar</button></div></form></div><div id="toast"></div><div id="scannerModal" class="on" style="display:none;position:fixed;inset:0;background:rgba(5,8,15,.82);z-index:100;align-items:center;justify-content:center;padding:16px"><div class="box" style="max-width:520px"><h2>📷 Ler código</h2><div id="scannerRegion"></div><p class="scan-help">Aponte a câmara traseira para o código de barras ou QR Code. Permita o acesso à câmara quando solicitado.</p><div class="row"><button class="btn" id="stopScanner">Cancelar</button></div></div></div>
 <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.4/jspdf.plugin.autotable.min.js"></script>
 <script>
 const DAY=864e5,NOW=Date.now(),KEY="mntech_v2";
 const $=s=>document.querySelector(s);
@@ -277,13 +279,74 @@ function dash(){const t=totals();
 function mvRow(m){const p=S.products.find(p=>p.id===m.pid);return`<div class="li"><div>${esc(p?p.name:"(removido)")}<small>${fdt(m.ts)}</small></div>${tag((m.type==="in"?"+":"−")+m.qty+" un",m.type==="in"?"var(--gr)":"var(--rd)")}</div>`}
 
 let fq="",fc="",sk="name",sd=1;
+
 const mg=p=>p.price?(p.price-p.cost)/p.price*100:0;
+function parseCSV(text){
+ const rows=[];let row=[],cell="",quoted=false;
+ for(let i=0;i<text.length;i++){const ch=text[i],next=text[i+1];
+  if(ch==='"'&&quoted&&next==='"'){cell+='"';i++}
+  else if(ch==='"'){quoted=!quoted}
+  else if(ch===","&&!quoted){row.push(cell);cell=""}
+  else if((ch==="\\n"||ch==="\\r")&&!quoted){if(ch==="\\r"&&next==="\\n")i++;row.push(cell);if(row.some(v=>v.trim()))rows.push(row);row=[];cell=""}
+  else cell+=ch;
+ }
+ row.push(cell);if(row.some(v=>v.trim()))rows.push(row);
+ return rows;
+}
+function importStockCSV(file){
+ const reader=new FileReader();
+ reader.onload=()=>{
+  try{
+   const rows=parseCSV(String(reader.result||"").replace(/^\\uFEFF/,""));
+   if(rows.length<2)throw new Error("O CSV está vazio ou não tem linhas de produtos.");
+   const norm=v=>String(v||"").normalize("NFD").replace(/[\\u0300-\\u036f]/g,"").trim().toLowerCase().replace(/[^a-z0-9]/g,"");
+   const headers=rows.shift().map(norm);
+   const col=(r,names)=>{const i=headers.findIndex(h=>names.includes(h));return i<0?"":String(r[i]??"").trim()};
+   const num=v=>{const x=String(v||"0").replace(/R\\$\\s?/g,"").replace(/\\./g,"").replace(",",".");const n=Number(x);return Number.isFinite(n)?n:0};
+   let added=0,updated=0,skipped=0;
+   rows.forEach(r=>{
+    const name=col(r,["nome","produto","name","descricao","descricao produto"]);
+    if(!name){skipped++;return}
+    const sku=col(r,["sku","codigo","codigodebarras","ean","barcode"]);
+    const catNameRaw=col(r,["categoria","category"])||"Geral";
+    let cat=S.cats.find(c=>!c.parent&&c.name.toLowerCase()===catNameRaw.toLowerCase());
+    if(!cat){cat={id:uid(),name:catNameRaw,parent:null};S.cats.push(cat)}
+    const data={name,cat:cat.id,sku,qty:Math.max(0,Math.floor(num(col(r,["quantidade","estoque","qtd","qty"])))),
+     min:Math.max(0,Math.floor(num(col(r,["minimo","estoqueminimo","min","minqty"])))),
+     cost:Math.max(0,num(col(r,["custo","precocusto","cost","costprice"]))),
+     price:Math.max(0,num(col(r,["venda","precovenda","preco","price","saleprice"])))};
+    const existing=S.products.find(p=>(sku&&p.sku&&p.sku.toLowerCase()===sku.toLowerCase())||(!sku&&p.name.toLowerCase()===name.toLowerCase()));
+    if(existing){Object.assign(existing,data);updated++}
+    else{S.products.push({id:uid(),...data});added++}
+   });
+   save();render();toast("Importação concluída: "+added+" novos, "+updated+" atualizados, "+skipped+" ignorados.");
+  }catch(err){toast(err.message||"Não foi possível importar o CSV")}
+  $("#stockImport").value="";
+ };
+ reader.onerror=()=>toast("Falha ao ler o arquivo CSV.");
+ reader.readAsText(file,"UTF-8");
+}
+function downloadStockPdf(){
+ if(!S.products.length)return toast("Não há produtos para exportar.");
+ if(!window.jspdf?.jsPDF)return toast("O gerador de PDF não carregou. Verifique a internet e tente novamente.");
+ const doc=new window.jspdf.jsPDF({orientation:"landscape",unit:"mm",format:"a4"});
+ doc.setFontSize(16);doc.text("MN Tech Cell - Relatório de Estoque",14,15);
+ doc.setFontSize(9);doc.text("Gerado em "+new Date().toLocaleString("pt-BR")+" · "+S.products.length+" produtos",14,22);
+ const body=S.products.map(p=>[p.name,catName(p.cat),p.sku||"-",String(p.qty),fmt(p.cost),fmt(p.price),p.qty<=0?"Zerado":p.qty<=p.min?"Baixo":"OK"]);
+ doc.autoTable({startY:27,head:[["Produto","Categoria","Código","Qtd.","Custo un.","Venda un.","Status"]],body,styles:{fontSize:8,cellPadding:2},headStyles:{fillColor:[0,105,180]},margin:{left:14,right:14}});
+ const y=doc.lastAutoTable.finalY+8;doc.setFontSize(9);
+ doc.text("Unidades em estoque: "+S.products.reduce((a,p)=>a+p.qty,0),14,y);
+ doc.text("Valor de custo: "+fmt(S.products.reduce((a,p)=>a+p.qty*p.cost,0)),90,y);
+ doc.text("Valor potencial de venda: "+fmt(S.products.reduce((a,p)=>a+p.qty*p.price,0)),180,y);
+ doc.save("mn-tech-cell-estoque-"+new Date().toISOString().slice(0,10)+".pdf");
+}
+
 const catUsed=id=>S.products.some(p=>p.cat===id||(S.cats.find(c=>c.id===p.cat)||{}).parent===id);
 function stock(){const ql=fq.toLowerCase();
  const val={name:p=>p.name.toLowerCase(),cat:p=>catName(p.cat),qty:p=>p.qty,cost:p=>p.cost,price:p=>p.price,lu:p=>p.price-p.cost,mg:mg,lp:p=>(p.price-p.cost)*p.qty,st:p=>p.qty<=0?0:p.qty<=p.min?1:2};
  const rows=S.products.filter(p=>(!fc||p.cat===fc||(S.cats.find(c=>c.id===p.cat)||{}).parent===fc)&&(!ql||p.name.toLowerCase().includes(ql)||(p.sku||"").toLowerCase().includes(ql))).sort((a,b)=>{const x=val[sk](a),y=val[sk](b);return(x>y?1:x<y?-1:0)*sd});
  const th=(k,l)=>`<th class="s" data-sort="${k}">${l}${sk===k?(sd>0?" ▲":" ▼"):""}</th>`;
- return`<div class="tools"><input id="q" placeholder="Buscar produto ou código…" value="${esc(fq)}"><button class="btn scan-btn" data-scan="search">📷 Ler código</button><select id="fc"><option value="">Todas categorias</option>${S.cats.map(c=>`<option value="${c.id}" ${fc===c.id?"selected":""}>${esc(catName(c.id))}</option>`).join("")}</select></div>
+ return`<div class="tools"><input id="q" placeholder="Buscar produto ou código…" value="${esc(fq)}"><button class="btn scan-btn" data-scan="search">📷 Ler código</button><select id="fc"><option value="">Todas categorias</option>${S.cats.map(c=>`<option value="${c.id}" ${fc===c.id?"selected":""}>${esc(catName(c.id))}</option>`).join("")}</select><button class="btn" data-import-stock>⬆ Importar CSV</button><button class="btn pri" data-pdf-stock>⬇ Baixar PDF</button><input id="stockImport" type="file" accept=".csv,text/csv" hidden></div>
  <div class="card"><div class="wrap"><table><thead><tr>${th("st","Status")}${th("name","Produto")}${th("cat","Categoria")}${th("qty","Qtd")}${th("cost","Custo")}${th("price","Venda")}${th("lu","Lucro un.")}${th("mg","Margem")}${th("lp","Lucro potencial")}<th>Ações</th></tr></thead><tbody>
  ${rows.map(p=>{const[s,c]=status(p),lu=p.price-p.cost;return`<tr><td>${tag(s,c)} ${p.qty>0&&!running(p)?tag("Parado","var(--mu)"):""}</td><td><b>${esc(p.name)}</b><br><small style="color:var(--mu)">${esc(p.sku||"")}</small></td><td>${esc(catName(p.cat))}</td><td><b>${p.qty}</b></td><td>${fmt(p.cost)}</td><td>${fmt(p.price)}</td><td class="gr">${fmt(lu)}</td><td>${tag(mg(p).toFixed(0)+"%",mg(p)>=40?"var(--gr)":mg(p)>=25?"var(--or)":"var(--rd)")}</td><td class="gr"><b>${fmt(lu*p.qty)}</b> <small style="color:var(--mu)">(${mg(p).toFixed(0)}%)</small></td><td><button class="btn sm" data-edit="${p.id}">Editar</button> <button class="btn sm gr" data-in="${p.id}">+ Entrar</button> <button class="btn sm or" data-out="${p.id}">− Sair</button></td></tr>`}).join("")||`<tr><td colspan="10" style="text-align:center;color:var(--mu)">Nenhum produto encontrado</td></tr>`}
  </tbody></table></div></div>`}
@@ -394,7 +457,7 @@ document.addEventListener("click",e=>{const t=e.target.closest("button,#modal");
  if(d.go){view=d.go;render();scrollTo(0,0)}
  else if(d.act==="newp")prodForm();else if(d.act==="newc")catForm();
  else if(d.edit)prodForm(d.edit);else if(d.in)moveForm(d.in,"in");else if(d.out)moveForm(d.out,"out");
- else if(d.scan)startScan(d.scan);
+ else if(d.scan)startScan(d.scan);else if("importStock"in d)$("#stockImport").click();else if("pdfStock"in d)downloadStockPdf();
  else if("qin"in d)moveForm($("#qp").value,"in");else if("qout"in d)moveForm($("#qp").value,"out");
  else if("close"in d)closeM();else if(d.cm)cmAct(d.cm,d.id);else if(d.editc)catEdit(d.editc);
  else if(d.saveedc){const v=$("#cen").value.trim();if(!v)return toast("Informe o nome");S.cats.find(c=>c.id===d.saveedc).name=v;save();closeM();toast("Categoria atualizada ✓")}else if("savep"in d)saveProd(d.savep);
@@ -428,6 +491,7 @@ $("#loginForm").addEventListener("submit",async e=>{
 });
 $("#offlineMode").addEventListener("click",()=>{$("#authGate").classList.remove("on");setCloudStatus("offline","Modo local · sem nuvem")});
 $("#stopScanner").addEventListener("click",stopScan);
+$("#stockImport").addEventListener("change",e=>{const file=e.target.files?.[0];if(file)importStockCSV(file)});
 if("serviceWorker" in navigator && location.protocol.startsWith("http")){
  navigator.serviceWorker.register("./sw.js").catch(err=>console.warn("PWA offline:",err));
 }
