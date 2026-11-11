@@ -4,6 +4,11 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0b0f19">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="MN Tech Cell">
+<meta name="apple-touch-icon" href="icon.svg">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
 <link rel="manifest" href="manifest.webmanifest">
 <title>MN Tech Cell · Estoque & Finanças</title>
 <style>
@@ -93,7 +98,7 @@ input:focus,select:focus{outline:2px solid var(--bl);outline-offset:0}
 <div class="app">
 <nav id="nav"></nav>
 <main>
- <header class="brand"><svg viewBox="0 0 40 48" fill="none" aria-label="MN Tech Cell"><defs><linearGradient id="lg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#00d2ff"/><stop offset="1" stop-color="#0088ff"/></linearGradient></defs><rect x="6" y="2" width="28" height="44" rx="7" stroke="url(#lg)" stroke-width="2.5"/><path d="M16 6h8" stroke="url(#lg)" stroke-width="2" stroke-linecap="round"/><circle cx="20" cy="26" r="8.5" stroke="url(#lg)" stroke-width="4" stroke-dasharray="3.3 3.3"/><circle cx="20" cy="26" r="6" stroke="url(#lg)" stroke-width="2.2"/><circle cx="20" cy="26" r="2.2" fill="#ffcc00"/></svg><div><b><span>MN</span> Tech Cell</b><small>A Solução para o Seu Celular</small></div><a class="btn wa" href="https://wa.me/5511983482317?text=Ol%C3%A1%2C%20MN%20Tech%20Cell!" target="_blank" rel="noopener">💬 <span>WhatsApp</span></a></header>
+ <header class="brand"><svg viewBox="0 0 40 48" fill="none" aria-label="MN Tech Cell"><defs><linearGradient id="lg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#00d2ff"/><stop offset="1" stop-color="#0088ff"/></linearGradient></defs><rect x="6" y="2" width="28" height="44" rx="7" stroke="url(#lg)" stroke-width="2.5"/><path d="M16 6h8" stroke="url(#lg)" stroke-width="2" stroke-linecap="round"/><circle cx="20" cy="26" r="8.5" stroke="url(#lg)" stroke-width="4" stroke-dasharray="3.3 3.3"/><circle cx="20" cy="26" r="6" stroke="url(#lg)" stroke-width="2.2"/><circle cx="20" cy="26" r="2.2" fill="#ffcc00"/></svg><div><b><span>MN</span> Tech Cell</b><small>A Solução para o Seu Celular</small></div><button class="btn pri" id="installApp" type="button">⬇ Instalar app</button><a class="btn wa" href="https://wa.me/5511983482317?text=Ol%C3%A1%2C%20MN%20Tech%20Cell!" target="_blank" rel="noopener">💬 <span>WhatsApp</span></a></header>
  <div class="top"><h1 id="title"></h1><div style="display:flex;gap:8px;align-items:center"><span id="cloudStatus" class="offline">Offline/local</span><button class="btn" id="theme" title="Tema">◐</button><button class="btn pri" data-act="newp">+ Produto</button></div></div>
  <div id="view"></div>
 </main>
@@ -493,6 +498,35 @@ $("#loginForm").addEventListener("submit",async e=>{
 $("#offlineMode").addEventListener("click",()=>{$("#authGate").classList.remove("on");setCloudStatus("offline","Modo local · sem nuvem")});
 $("#stopScanner").addEventListener("click",stopScan);
 $("#stockImport").addEventListener("change",e=>{const file=e.target.files?.[0];if(file)importStockCSV(file)});
+let deferredInstallPrompt=null;
+const installButton=$("#installApp");
+const isStandalone=()=>window.matchMedia("(display-mode: standalone)").matches||window.navigator.standalone===true;
+function updateInstallButton(){
+ if(!installButton)return;
+ if(isStandalone()){installButton.textContent="✓ App instalado";installButton.disabled=true;return}
+ installButton.hidden=false;
+}
+window.addEventListener("beforeinstallprompt",event=>{
+ event.preventDefault();deferredInstallPrompt=event;
+ if(installButton){installButton.textContent="⬇ Instalar app";installButton.hidden=false}
+});
+window.addEventListener("appinstalled",()=>{
+ deferredInstallPrompt=null;
+ if(installButton){installButton.textContent="✓ App instalado";installButton.disabled=true}
+});
+installButton?.addEventListener("click",async()=>{
+ if(deferredInstallPrompt){
+  deferredInstallPrompt.prompt();
+  const choice=await deferredInstallPrompt.userChoice;
+  if(choice?.outcome==="accepted"){installButton.textContent="✓ App instalado";installButton.disabled=true}
+  deferredInstallPrompt=null;return;
+ }
+ const ua=navigator.userAgent||"",isIOS=/iphone|ipad|ipod/i.test(ua);
+ alert(isIOS
+  ?"Para instalar no iPhone: toque em Compartilhar no Safari e escolha 'Adicionar à Tela de Início'."
+  :"Para instalar: abra o menu ⋮ do Chrome e toque em 'Instalar app' ou 'Adicionar à tela inicial'.");
+});
+updateInstallButton();
 if("serviceWorker" in navigator && location.protocol.startsWith("http")){
  navigator.serviceWorker.register("./sw.js").catch(err=>console.warn("PWA offline:",err));
 }
