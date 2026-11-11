@@ -98,7 +98,7 @@ input:focus,select:focus{outline:2px solid var(--bl);outline-offset:0}
  <div id="view"></div>
 </main>
 </div>
-<div id="modal"></div><div id="authGate"><form class="box" id="loginForm"><h2>☁ Acessar sincronização</h2><p style="color:var(--mu);font-size:13px">Entre com o usuário criado no Supabase para sincronizar o estoque entre dispositivos.</p><label style="font-size:12px;color:var(--mu)">E-mail</label><input id="loginEmail" type="email" autocomplete="username" required placeholder="seu@email.com"><label style="font-size:12px;color:var(--mu);display:block;margin-top:10px">Senha</label><input id="loginPassword" type="password" autocomplete="current-password" required placeholder="Sua senha"><p id="loginError" style="color:var(--rd);font-size:12px"></p><div class="row"><button type="button" class="btn" id="offlineMode">Continuar offline</button><button class="btn pri" type="submit">Entrar</button></div></form></div><div id="toast"></div><div id="scannerModal" class="on" style="display:none;position:fixed;inset:0;background:rgba(5,8,15,.82);z-index:100;align-items:center;justify-content:center;padding:16px"><div class="box" style="max-width:520px"><h2>📷 Ler código</h2><div id="scannerRegion"></div><p class="scan-help">Aponte a câmara traseira para o código de barras ou QR Code. Permita o acesso à câmara quando solicitado.</p><div class="row"><button class="btn" id="stopScanner">Cancelar</button></div></div></div>
+<div id="modal"></div><div id="authGate"><form class="box" id="loginForm"><h2>☁ Conta e sincronização</h2><p style="color:var(--mu);font-size:13px">Entre na sua conta ou crie seu próprio acesso com e-mail e senha. Seus dados ficam separados dos dados de outras lojas.</p><label style="font-size:12px;color:var(--mu)">E-mail</label><input id="loginEmail" type="email" autocomplete="username" required placeholder="seu@email.com"><label style="font-size:12px;color:var(--mu);display:block;margin-top:10px">Senha</label><input id="loginPassword" type="password" autocomplete="current-password" minlength="8" required placeholder="Mínimo de 8 caracteres"><p id="loginError" style="color:var(--rd);font-size:12px"></p><div class="row" style="flex-wrap:wrap"><button type="button" class="btn" id="offlineMode">Continuar offline</button><button class="btn" type="submit" value="signup" name="authMode">Criar minha conta</button><button class="btn pri" type="submit" value="signin" name="authMode">Entrar</button></div></form></div><div id="toast"></div><div id="scannerModal" class="on" style="display:none;position:fixed;inset:0;background:rgba(5,8,15,.82);z-index:100;align-items:center;justify-content:center;padding:16px"><div class="box" style="max-width:520px"><h2>📷 Ler código</h2><div id="scannerRegion"></div><p class="scan-help">Aponte a câmara traseira para o código de barras ou QR Code. Permita o acesso à câmara quando solicitado.</p><div class="row"><button class="btn" id="stopScanner">Cancelar</button></div></div></div>
 <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
@@ -119,10 +119,23 @@ function seed(){
 const SUPABASE_URL = "https://jryfuvkkxmuyxkialkkk.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_YU3tqPIPK9LLIxwPSui79Q_l8sblu8q";
 let supabaseClient = null, cloudReady = false, cloudBusy = false, cloudTimer = null;
-function load(){try{const r=localStorage.getItem(KEY);return r?JSON.parse(r):null}catch(e){return null}}
+let currentUserId = null, localDataKey = KEY;
+function load(key=KEY){try{const r=localStorage.getItem(key);return r?JSON.parse(r):null}catch(e){return null}}
 function save(){
- try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){toast("Não foi possível salvar localmente")}
+ try{localStorage.setItem(localDataKey,JSON.stringify(S))}catch(e){toast("Não foi possível salvar localmente")}
  if(cloudReady){clearTimeout(cloudTimer);cloudTimer=setTimeout(pushCloud,500)}
+}
+function useAccountStorage(userId){
+ const accountKey=KEY+":"+userId;
+ const accountData=load(accountKey);
+ if(accountData){S=accountData}
+ else{
+  const legacy=load(KEY);
+  S=legacy||seed();
+  localStorage.setItem(accountKey,JSON.stringify(S));
+  if(legacy)localStorage.removeItem(KEY);
+ }
+ localDataKey=accountKey;
 }
 function cloudConfigured(){
  return SUPABASE_URL.startsWith("https://") &&
@@ -135,29 +148,22 @@ function setCloudStatus(state,label){
  el.className=state;el.textContent=label;
 }
 const toCloud = () => ({
- categories:S.cats.map(c=>({id:c.id,name:c.name,parent_id:c.parent||null})),
- products:S.products.map(p=>({id:p.id,name:p.name,category_id:p.cat||null,sku:p.sku||null,qty:p.qty,min_qty:p.min,cost_price:p.cost,sale_price:p.price})),
- movements:S.moves.map(m=>({id:m.id,product_id:m.pid,type:m.type,qty:m.qty,cost_price:m.cost||0,sale_price:m.val||0,timestamp:new Date(m.ts).toISOString()}))
+ categories:S.cats.map(c=>({id:c.id,owner_id:currentUserId,name:c.name,parent_id:c.parent||null})),
+ products:S.products.map(p=>({id:p.id,owner_id:currentUserId,name:p.name,category_id:p.cat||null,sku:p.sku||null,qty:p.qty,min_qty:p.min,cost_price:p.cost,sale_price:p.price})),
+ movements:S.moves.map(m=>({id:m.id,owner_id:currentUserId,product_id:m.pid,type:m.type,qty:m.qty,cost_price:m.cost||0,sale_price:m.val||0,timestamp:new Date(m.ts).toISOString()}))
 });
 async function pushCloud(){
  if(!cloudReady||cloudBusy||!supabaseClient)return;
  cloudBusy=true;
  try{
   const d=toCloud();
-  // Primeiro grava pais e filhos; depois remove da nuvem o que foi excluído localmente.
+  // Upsert por conta. Não apaga registros remotos com base em uma cópia local possivelmente desatualizada.
   for(const table of ["categories","products","movements"]){
    const rows=d[table];
    if(rows.length){
     const {error}=await supabaseClient.from(table).upsert(rows,{onConflict:"id"});
     if(error)throw error;
    }
-  }
-  for(const table of ["movements","products","categories"]){
-   const keep=new Set(d[table].map(row=>row.id));
-   const {data:existing,error:readError}=await supabaseClient.from(table).select("id");
-   if(readError)throw readError;
-   const stale=(existing||[]).map(row=>row.id).filter(id=>!keep.has(id));
-   if(stale.length){const {error}=await supabaseClient.from(table).delete().in("id",stale);if(error)throw error;}
   }
   setCloudStatus("online","☁ Sincronizado");
  }catch(err){
@@ -166,9 +172,9 @@ async function pushCloud(){
 }
 async function pullCloud(){
  const [c,p,m]=await Promise.all([
-  supabaseClient.from("categories").select("*"),
-  supabaseClient.from("products").select("*"),
-  supabaseClient.from("movements").select("*")
+  supabaseClient.from("categories").select("*").eq("owner_id",currentUserId),
+  supabaseClient.from("products").select("*").eq("owner_id",currentUserId),
+  supabaseClient.from("movements").select("*").eq("owner_id",currentUserId)
  ]);
  if(c.error)throw c.error;if(p.error)throw p.error;if(m.error)throw m.error;
  if((c.data||[]).length||(p.data||[]).length||(m.data||[]).length){
@@ -177,13 +183,18 @@ async function pullCloud(){
    products:(p.data||[]).map(x=>({id:x.id,name:x.name,cat:x.category_id||null,sku:x.sku||"",qty:Number(x.qty)||0,min:Number(x.min_qty)||0,cost:Number(x.cost_price)||0,price:Number(x.sale_price)||0})),
    moves:(m.data||[]).map(x=>({id:x.id,pid:x.product_id,type:x.type,qty:Number(x.qty)||0,cost:Number(x.cost_price)||0,val:Number(x.sale_price)||0,ts:new Date(x.timestamp).getTime()}))
   };
-  localStorage.setItem(KEY,JSON.stringify(S));
+  localStorage.setItem(localDataKey,JSON.stringify(S));
  }else{
   // Primeira sincronização: publica os dados locais/demonstração já existentes.
   await pushCloud();
  }
 }
 async function connectCloud(){
+ const {data:sessionData,error:sessionError}=await supabaseClient.auth.getSession();
+ if(sessionError)throw sessionError;
+ currentUserId=sessionData.session?.user?.id;
+ if(!currentUserId)throw new Error("Entre na sua conta para sincronizar.");
+ useAccountStorage(currentUserId);
  cloudReady=true;await pullCloud();setCloudStatus("online","☁ Sincronizado");render();
  supabaseClient.channel("mn-tech-cell-live")
   .on("postgres_changes",{event:"*",schema:"public",table:"categories"},()=>refreshFromRealtime())
@@ -386,12 +397,24 @@ document.addEventListener("click",e=>{const t=e.target.closest("button,#modal");
 render();
 $("#loginForm").addEventListener("submit",async e=>{
  e.preventDefault();if(!supabaseClient)return;
- const errEl=$("#loginError");errEl.textContent="Validando acesso…";
+ const errEl=$("#loginError"),mode=e.submitter?.value||"signin";
+ const email=$("#loginEmail").value.trim(),password=$("#loginPassword").value;
+ errEl.textContent=mode==="signup"?"Criando sua conta…":"Validando acesso…";
  try{
-  const {error}=await supabaseClient.auth.signInWithPassword({email:$("#loginEmail").value.trim(),password:$("#loginPassword").value});
-  if(error)throw error;
-  $("#authGate").classList.remove("on");errEl.textContent="";await connectCloud();toast("Sincronização conectada ✓");
- }catch(err){errEl.textContent=err.message||"Não foi possível entrar"}
+  if(mode==="signup"){
+   const {data,error}=await supabaseClient.auth.signUp({email,password});
+   if(error)throw error;
+   if(data.session){
+    $("#authGate").classList.remove("on");errEl.textContent="";await connectCloud();toast("Conta criada e sincronizada ✓");
+   }else{
+    errEl.textContent="Conta criada. Confira seu e-mail e confirme o cadastro; depois volte aqui para entrar.";
+   }
+  }else{
+   const {error}=await supabaseClient.auth.signInWithPassword({email,password});
+   if(error)throw error;
+   $("#authGate").classList.remove("on");errEl.textContent="";await connectCloud();toast("Sincronização conectada ✓");
+  }
+ }catch(err){errEl.textContent=err.message||"Não foi possível concluir"}
 });
 $("#offlineMode").addEventListener("click",()=>{$("#authGate").classList.remove("on");setCloudStatus("offline","Modo local · sem nuvem")});
 $("#stopScanner").addEventListener("click",stopScan);
