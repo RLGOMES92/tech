@@ -105,7 +105,7 @@ input:focus,select:focus{outline:2px solid var(--bl);outline-offset:0}
  <div id="view"></div>
 </main>
 </div>
-<div id="modal"></div><div id="authGate"><form class="box" id="loginForm"><h2>Bem-vindo à MN Tech Cell</h2><p style="color:var(--mu);font-size:13px">Entre com seu e-mail e senha para acessar seu estoque e suas informações com segurança.</p><label style="font-size:12px;color:var(--mu)">E-mail</label><input id="loginEmail" type="email" autocomplete="username" required placeholder="seu@email.com"><label style="font-size:12px;color:var(--mu);display:block;margin-top:10px">Senha</label><input id="loginPassword" type="password" autocomplete="current-password" minlength="8" required placeholder="Mínimo de 8 caracteres"><p id="loginError" style="color:var(--rd);font-size:12px"></p><div class="row" style="flex-wrap:wrap"><button type="button" class="btn" id="offlineMode">Usar sem conta neste aparelho</button><button class="btn" type="submit" value="signup" name="authMode">Criar minha conta</button><button class="btn pri" type="submit" value="signin" name="authMode">Entrar</button></div></form></div><div id="toast"></div><div id="scannerModal" class="on" style="display:none;position:fixed;inset:0;background:rgba(5,8,15,.82);z-index:100;align-items:center;justify-content:center;padding:16px"><div class="box" style="max-width:520px"><h2>📷 Ler código</h2><div id="scannerRegion"></div><p class="scan-help">Aponte a câmara traseira para o código de barras ou QR Code. Permita o acesso à câmara quando solicitado.</p><div class="row"><button class="btn" id="stopScanner">Cancelar</button></div></div></div>
+<div id="modal"></div><div id="authGate"><form class="box" id="loginForm"><h2>Bem-vindo à MN Tech Cell</h2><p style="color:var(--mu);font-size:13px">Entre com seu e-mail e senha para acessar seu estoque e suas informações com segurança.</p><label style="font-size:12px;color:var(--mu)">E-mail</label><input id="loginEmail" type="email" autocomplete="username" required placeholder="seu@email.com"><label style="font-size:12px;color:var(--mu);display:block;margin-top:10px">Senha</label><input id="loginPassword" type="password" autocomplete="current-password" minlength="8" required placeholder="Mínimo de 8 caracteres"><p id="loginError" style="color:var(--rd);font-size:12px"></p><div class="row" style="flex-wrap:wrap"><button type="button" class="btn" id="installAppLogin">⬇ Instalar aplicativo</button><button type="button" class="btn" id="offlineMode">Usar sem conta neste aparelho</button><button class="btn" type="submit" value="signup" name="authMode">Criar minha conta</button><button class="btn pri" type="submit" value="signin" name="authMode">Entrar</button></div></form></div><div id="toast"></div><div id="scannerModal" class="on" style="display:none;position:fixed;inset:0;background:rgba(5,8,15,.82);z-index:100;align-items:center;justify-content:center;padding:16px"><div class="box" style="max-width:520px"><h2>📷 Ler código</h2><div id="scannerRegion"></div><p class="scan-help">Aponte a câmara traseira para o código de barras ou QR Code. Permita o acesso à câmara quando solicitado.</p><div class="row"><button class="btn" id="stopScanner">Cancelar</button></div></div></div>
 <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -226,6 +226,7 @@ async function initCloud(){
  try{
   if(!window.supabase?.createClient)throw new Error("Biblioteca Supabase não carregou");
   supabaseClient=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
+  $("#authGate").classList.add("on");
   setCloudStatus("","Verificando acesso…");
   const {data,error}=await supabaseClient.auth.getSession();if(error)throw error;
   if(data.session){await connectCloud()}else{setCloudStatus("offline","Entre para sincronizar");$("#authGate").classList.add("on")}
@@ -501,33 +502,34 @@ $("#offlineMode").addEventListener("click",()=>{$("#authGate").classList.remove(
 $("#stopScanner").addEventListener("click",stopScan);
 $("#stockImport").addEventListener("change",e=>{const file=e.target.files?.[0];if(file)importStockCSV(file)});
 let deferredInstallPrompt=null;
-const installButton=$("#installApp");
+const installButton=$("#installApp"),installLoginButton=$("#installAppLogin");
+const installButtons=[installButton,installLoginButton];
 const isStandalone=()=>window.matchMedia("(display-mode: standalone)").matches||window.navigator.standalone===true;
 function updateInstallButton(){
- if(!installButton)return;
- if(isStandalone()){installButton.textContent="✓ App instalado";installButton.disabled=true;return}
- installButton.hidden=false;
+ for(const btn of installButtons){if(!btn)continue;if(isStandalone()){btn.textContent="✓ App instalado";btn.disabled=true}else{btn.hidden=false;btn.textContent=deferredInstallPrompt?"⬇ Instalar app":"⬇ Como instalar"}}
 }
 window.addEventListener("beforeinstallprompt",event=>{
  event.preventDefault();deferredInstallPrompt=event;
- if(installButton){installButton.textContent="⬇ Instalar app";installButton.hidden=false}
+ for(const btn of installButtons){if(btn){btn.textContent="⬇ Instalar app";btn.hidden=false}}
 });
 window.addEventListener("appinstalled",()=>{
  deferredInstallPrompt=null;
- if(installButton){installButton.textContent="✓ App instalado";installButton.disabled=true}
+ for(const btn of installButtons){if(btn){btn.textContent="✓ App instalado";btn.disabled=true}}
 });
-installButton?.addEventListener("click",async()=>{
+async function installAppAction(){
  if(deferredInstallPrompt){
-  deferredInstallPrompt.prompt();
-  const choice=await deferredInstallPrompt.userChoice;
-  if(choice?.outcome==="accepted"){installButton.textContent="✓ App instalado";installButton.disabled=true}
-  deferredInstallPrompt=null;return;
+  const prompt=deferredInstallPrompt;deferredInstallPrompt=null;
+  await prompt.prompt();const choice=await prompt.userChoice;
+  if(choice?.outcome==="accepted"){for(const btn of installButtons){if(btn){btn.textContent="✓ App instalado";btn.disabled=true}}}
+  else updateInstallButton();
+  return;
  }
  const ua=navigator.userAgent||"",isIOS=/iphone|ipad|ipod/i.test(ua);
  alert(isIOS
   ?"Para instalar no iPhone: toque em Compartilhar no Safari e escolha 'Adicionar à Tela de Início'."
-  :"Para instalar: abra o menu ⋮ do Chrome e toque em 'Instalar app' ou 'Adicionar à tela inicial'.");
-});
+  :"No Android, abra esta página no Google Chrome, toque no menu ⋮ e escolha 'Instalar app' ou 'Adicionar à tela inicial'. Se a opção não aparecer, atualize a página e tente novamente.");
+}
+for(const btn of installButtons){btn?.addEventListener("click",installAppAction)}
 updateInstallButton();
 if("serviceWorker" in navigator && location.protocol.startsWith("http")){
  navigator.serviceWorker.register("./sw.js").catch(err=>console.warn("PWA offline:",err));
