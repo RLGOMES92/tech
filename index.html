@@ -106,10 +106,10 @@ input:focus,select:focus{outline:2px solid var(--bl);outline-offset:0}
 </main>
 </div>
 <div id="modal"></div><div id="authGate"><form class="box" id="loginForm"><h2>Bem-vindo à MN Tech Cell</h2><p style="color:var(--mu);font-size:13px">Entre com seu e-mail e senha para acessar seu estoque e suas informações com segurança.</p><label style="font-size:12px;color:var(--mu)">E-mail</label><input id="loginEmail" type="email" autocomplete="username" required placeholder="seu@email.com"><label style="font-size:12px;color:var(--mu);display:block;margin-top:10px">Senha</label><input id="loginPassword" type="password" autocomplete="current-password" minlength="8" required placeholder="Mínimo de 8 caracteres"><p id="loginError" style="color:var(--rd);font-size:12px"></p><div class="row" style="flex-wrap:wrap"><button type="button" class="btn" id="installAppLogin">⬇ Instalar aplicativo</button><button type="button" class="btn" id="offlineMode">Usar sem conta neste aparelho</button><button class="btn" type="submit" value="signup" name="authMode">Criar minha conta</button><button class="btn pri" type="submit" value="signin" name="authMode">Entrar</button></div></form></div><div id="toast"></div><div id="scannerModal" class="on" style="display:none;position:fixed;inset:0;background:rgba(5,8,15,.82);z-index:100;align-items:center;justify-content:center;padding:16px"><div class="box" style="max-width:520px"><h2>📷 Ler código</h2><div id="scannerRegion"></div><p class="scan-help">Aponte a câmara traseira para o código de barras ou QR Code. Permita o acesso à câmara quando solicitado.</p><div class="row"><button class="btn" id="stopScanner">Cancelar</button></div></div></div>
-<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.4/jspdf.plugin.autotable.min.js"></script>
+<script defer src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.4/jspdf.plugin.autotable.min.js"></script>
 <script>
 const DAY=864e5,NOW=Date.now(),KEY="mntech_v2";
 const $=s=>document.querySelector(s);
@@ -221,10 +221,17 @@ async function connectCloud(){
   .on("postgres_changes",{event:"*",schema:"public",table:"movements"},()=>refreshFromRealtime())
   .subscribe();
 }
+async function waitForSupabase(maxWait=10000){
+ const started=Date.now();
+ while(!window.supabase?.createClient&&Date.now()-started<maxWait)await new Promise(resolve=>setTimeout(resolve,150));
+ return !!window.supabase?.createClient;
+}
 async function initCloud(){
- if(!cloudConfigured()){setCloudStatus("offline","Local · configure Supabase");return}
+ document.body.classList.add("app-ready");
+ $("#authGate").classList.add("on");
+ if(!cloudConfigured()){setCloudStatus("offline","Configuração de acesso indisponível");$("#loginError").textContent="A conexão da loja ainda não está configurada.";return}
  try{
-  if(!window.supabase?.createClient)throw new Error("Biblioteca Supabase não carregou");
+  if(!await waitForSupabase())throw new Error("Não foi possível carregar o serviço de acesso. Verifique a internet e atualize a página.");
   supabaseClient=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
   $("#authGate").classList.add("on");
   setCloudStatus("","Verificando acesso…");
@@ -535,7 +542,8 @@ if("serviceWorker" in navigator && location.protocol.startsWith("http")){
  navigator.serviceWorker.register("./sw.js").catch(err=>console.warn("PWA offline:",err));
 }
 const splash=$("#splash");
-setTimeout(()=>{splash?.classList.add("hide");setTimeout(()=>{splash?.remove();initCloud()},420)},1300);
+setTimeout(()=>{document.body.classList.add("app-ready");splash?.classList.add("hide");setTimeout(()=>{splash?.remove();initCloud()},420)},900);
+window.addEventListener("error",event=>{console.error("Falha na aplicação:",event.error||event.message);document.body.classList.add("app-ready");$("#authGate")?.classList.add("on");if($("#loginError"))$("#loginError").textContent="Ocorreu uma falha ao iniciar. Atualize a página e tente novamente.";});
 </script>
 </body>
 </html>
