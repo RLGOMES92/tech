@@ -287,7 +287,7 @@ function parseCSV(text){
   if(ch==='"'&&quoted&&next==='"'){cell+='"';i++}
   else if(ch==='"'){quoted=!quoted}
   else if(ch===","&&!quoted){row.push(cell);cell=""}
-  else if((ch==="\\n"||ch==="\\r")&&!quoted){if(ch==="\\r"&&next==="\\n")i++;row.push(cell);if(row.some(v=>v.trim()))rows.push(row);row=[];cell=""}
+  else if((ch==="\n"||ch==="\r")&&!quoted){if(ch==="\r"&&next==="\n")i++;row.push(cell);if(row.some(v=>v.trim()))rows.push(row);row=[];cell=""}
   else cell+=ch;
  }
  row.push(cell);if(row.some(v=>v.trim()))rows.push(row);
@@ -297,12 +297,12 @@ function importStockCSV(file){
  const reader=new FileReader();
  reader.onload=()=>{
   try{
-   const rows=parseCSV(String(reader.result||"").replace(/^\\uFEFF/,""));
+   const rows=parseCSV(String(reader.result||"").replace(/^\uFEFF/,""));
    if(rows.length<2)throw new Error("O CSV está vazio ou não tem linhas de produtos.");
-   const norm=v=>String(v||"").normalize("NFD").replace(/[\\u0300-\\u036f]/g,"").trim().toLowerCase().replace(/[^a-z0-9]/g,"");
+   const norm=v=>String(v||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").trim().toLowerCase().replace(/[^a-z0-9]/g,"");
    const headers=rows.shift().map(norm);
    const col=(r,names)=>{const i=headers.findIndex(h=>names.includes(h));return i<0?"":String(r[i]??"").trim()};
-   const num=v=>{const x=String(v||"0").replace(/R\\$\\s?/g,"").replace(/\\./g,"").replace(",",".");const n=Number(x);return Number.isFinite(n)?n:0};
+   const num=v=>{const x=String(v||"0").replace(/R\$\s?/g,"").replace(/\./g,"").replace(",",".");const n=Number(x);return Number.isFinite(n)?n:0};
    let added=0,updated=0,skipped=0;
    rows.forEach(r=>{
     const name=col(r,["nome","produto","name","descricao","descricao produto"]);
