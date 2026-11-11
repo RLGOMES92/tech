@@ -136,6 +136,7 @@ function useAccountStorage(userId){
   if(legacy)localStorage.removeItem(KEY);
  }
  localDataKey=accountKey;
+ if(!S.deleted)S.deleted={categories:[],products:[],movements:[]};
 }
 function cloudConfigured(){
  return SUPABASE_URL.startsWith("https://") &&
@@ -165,6 +166,15 @@ async function pushCloud(){
     if(error)throw error;
    }
   }
+  for(const table of ["movements","products","categories"]){
+   const ids=S.deleted?.[table]||[];
+   if(ids.length){
+    const {error}=await supabaseClient.from(table).delete().eq("owner_id",currentUserId).in("id",ids);
+    if(error)throw error;
+    S.deleted[table]=[];
+   }
+  }
+  localStorage.setItem(localDataKey,JSON.stringify(S));
   setCloudStatus("online","☁ Sincronizado");
  }catch(err){
   console.error("Supabase sync:",err);setCloudStatus("offline","Offline · salvo neste aparelho");
@@ -388,7 +398,7 @@ document.addEventListener("click",e=>{const t=e.target.closest("button,#modal");
  else if("qin"in d)moveForm($("#qp").value,"in");else if("qout"in d)moveForm($("#qp").value,"out");
  else if("close"in d)closeM();else if(d.cm)cmAct(d.cm,d.id);else if(d.editc)catEdit(d.editc);
  else if(d.saveedc){const v=$("#cen").value.trim();if(!v)return toast("Informe o nome");S.cats.find(c=>c.id===d.saveedc).name=v;save();closeM();toast("Categoria atualizada ✓")}else if("savep"in d)saveProd(d.savep);
- else if(d.delp){if(confirm("Excluir este produto e seu histórico de movimentações?")){S.products=S.products.filter(p=>p.id!==d.delp);S.moves=S.moves.filter(m=>m.pid!==d.delp);save();closeM();render()}}
+ else if(d.delp){if(confirm("Excluir este produto e seu histórico de movimentações?")){S.deleted=S.deleted||{categories:[],products:[],movements:[]};S.deleted.products.push(d.delp);S.deleted.movements.push(...S.moves.filter(m=>m.pid===d.delp).map(m=>m.id));S.products=S.products.filter(p=>p.id!==d.delp);S.moves=S.moves.filter(m=>m.pid!==d.delp);save();closeM();render()}}
  else if(d.domove){const[a,b]=d.domove.split("|");doMove(a,b)}
  else if("savec"in d){const n=$("#cn").value.trim();if(!n)return toast("Informe o nome");S.cats.push({id:uid(),name:n,parent:$("#cp").value||null});save();closeM();render();toast("Categoria criada ✓")}
  else if(d.delc){if(catUsed(d.delc))return toast("Há produtos nesta categoria");S.cats=S.cats.filter(c=>c.id!==d.delc&&c.parent!==d.delc);save();render()}
