@@ -1,7 +1,7 @@
 {
-  "name": "MN Tech Cell — Estoque & Finanças",
-  "short_name": "MN Tech Cell",
-  "description": "Aplicativo de gestão de estoque e balcão da MN Tech Cell",
+  "name": "MN Tech — Estoque & Finanças",
+  "short_name": "MN Tech",
+  "description": "Aplicativo de gestão de estoque e balcão da MN Tech",
   "id": "./",
   "start_url": "./",
   "scope": "./",
