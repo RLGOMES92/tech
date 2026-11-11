@@ -282,11 +282,11 @@ let fq="",fc="",sk="name",sd=1;
 
 const mg=p=>p.price?(p.price-p.cost)/p.price*100:0;
 function parseCSV(text){
- const rows=[];let row=[],cell="",quoted=false;
+ const firstLine=text.split(/\\r?\\n/)[0]||"";const delimiter=firstLine.split(";").length>firstLine.split(",").length?";":",";\n const rows=[];let row=[],cell="",quoted=false;
  for(let i=0;i<text.length;i++){const ch=text[i],next=text[i+1];
   if(ch==='"'&&quoted&&next==='"'){cell+='"';i++}
   else if(ch==='"'){quoted=!quoted}
-  else if(ch===","&&!quoted){row.push(cell);cell=""}
+  else if(ch===delimiter&&!quoted){row.push(cell);cell=""}
   else if((ch==="\n"||ch==="\r")&&!quoted){if(ch==="\r"&&next==="\n")i++;row.push(cell);if(row.some(v=>v.trim()))rows.push(row);row=[];cell=""}
   else cell+=ch;
  }
@@ -305,7 +305,7 @@ function importStockCSV(file){
    const num=v=>{const x=String(v||"0").replace(/R\$\s?/g,"").replace(/\./g,"").replace(",",".");const n=Number(x);return Number.isFinite(n)?n:0};
    let added=0,updated=0,skipped=0;
    rows.forEach(r=>{
-    const name=col(r,["nome","produto","name","descricao","descricao produto"]);
+    const name=col(r,["nome","produto","name","descricao","descricaoproduto"]);
     if(!name){skipped++;return}
     const sku=col(r,["sku","codigo","codigodebarras","ean","barcode"]);
     const catNameRaw=col(r,["categoria","category"])||"Geral";
