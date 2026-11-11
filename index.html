@@ -282,7 +282,8 @@ let fq="",fc="",sk="name",sd=1;
 
 const mg=p=>p.price?(p.price-p.cost)/p.price*100:0;
 function parseCSV(text){
- const firstLine=text.split(/\\r?\\n/)[0]||"";const delimiter=firstLine.split(";").length>firstLine.split(",").length?";":",";\n const rows=[];let row=[],cell="",quoted=false;
+ const firstLine=text.split(/\r?\n/)[0]||"";const delimiter=firstLine.split(";").length>firstLine.split(",").length?";":",";
+ const rows=[];let row=[],cell="",quoted=false;
  for(let i=0;i<text.length;i++){const ch=text[i],next=text[i+1];
   if(ch==='"'&&quoted&&next==='"'){cell+='"';i++}
   else if(ch==='"'){quoted=!quoted}
