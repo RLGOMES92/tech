@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#0b0f19">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="MN Tech Cell">
+<meta name="apple-mobile-web-app-title" content="MN Tech">
 <link rel="apple-touch-icon" sizes="192x192" href="icon-192.png">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <link rel="icon" href="icon-192.png" type="image/png" sizes="192x192">
@@ -105,7 +105,7 @@ input:focus,select:focus{outline:2px solid var(--bl);outline-offset:0}
  <div id="view"></div>
 </main>
 </div>
-<div id="modal"></div><div id="authGate"><form class="box" id="loginForm"><h2>Bem-vindo à MN Tech Cell</h2><p style="color:var(--mu);font-size:13px">Entre com seu e-mail e senha para acessar seu estoque e suas informações com segurança.</p><label style="font-size:12px;color:var(--mu)">E-mail</label><input id="loginEmail" type="email" autocomplete="username" required placeholder="seu@email.com"><label style="font-size:12px;color:var(--mu);display:block;margin-top:10px">Senha</label><input id="loginPassword" type="password" autocomplete="current-password" minlength="8" required placeholder="Mínimo de 8 caracteres"><p id="loginError" style="color:var(--rd);font-size:12px"></p><div class="row" style="flex-wrap:wrap"><button type="button" class="btn" id="installAppLogin">⬇ Instalar aplicativo</button><button class="btn" type="submit" value="signup" name="authMode">Criar minha conta</button><button class="btn pri" type="submit" value="signin" name="authMode">Entrar</button></div></form></div><div id="toast"></div><div id="scannerModal" class="on" style="display:none;position:fixed;inset:0;background:rgba(5,8,15,.82);z-index:100;align-items:center;justify-content:center;padding:16px"><div class="box" style="max-width:520px"><h2>📷 Ler código</h2><div id="scannerRegion"></div><p class="scan-help">Aponte a câmara traseira para o código de barras ou QR Code. Permita o acesso à câmara quando solicitado.</p><div class="row"><button class="btn" id="stopScanner">Cancelar</button></div></div></div>
+<div id="modal"></div><div id="authGate"><form class="box" id="loginForm"><h2>Bem-vindo à MN Tech</h2><p style="color:var(--mu);font-size:13px">Entre com seu e-mail e senha para acessar seu estoque e suas informações com segurança.</p><label style="font-size:12px;color:var(--mu)">E-mail</label><input id="loginEmail" type="email" autocomplete="username" required placeholder="seu@email.com"><label style="font-size:12px;color:var(--mu);display:block;margin-top:10px">Senha</label><input id="loginPassword" type="password" autocomplete="current-password" minlength="8" required placeholder="Mínimo de 8 caracteres"><p id="loginError" style="color:var(--rd);font-size:12px"></p><div class="row" style="flex-wrap:wrap"><button type="button" class="btn" id="installAppLogin">⬇ Instalar aplicativo</button><button class="btn" type="submit" value="signup" name="authMode">Criar minha conta</button><button class="btn pri" type="submit" value="signin" name="authMode">Entrar</button></div></form></div><div id="toast"></div><div id="scannerModal" class="on" style="display:none;position:fixed;inset:0;background:rgba(5,8,15,.82);z-index:100;align-items:center;justify-content:center;padding:16px"><div class="box" style="max-width:520px"><h2>📷 Ler código</h2><div id="scannerRegion"></div><p class="scan-help">Aponte a câmara traseira para o código de barras ou QR Code. Permita o acesso à câmara quando solicitado.</p><div class="row"><button class="btn" id="stopScanner">Cancelar</button></div></div></div>
 <script defer src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 <!-- Supabase SDK carregado com fallback para não bloquear a abertura do aplicativo. -->
 <script defer src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -128,7 +128,7 @@ function seed(){
 const SUPABASE_URL = "https://jryfuvkkxmuyxkialkkk.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_YU3tqPIPK9LLIxwPSui79Q_l8sblu8q";
 let supabaseClient = null, cloudReady = false, cloudBusy = false, cloudTimer = null;
-let currentUserId = null, localDataKey = KEY;
+let currentUserId = null;
 // Estoque e financeiro são mantidos no Supabase. A leitura local existe
 // exclusivamente para importar uma única vez dados de versões antigas.
 let cloudDirty=false, legacyKeysToClear=[];
@@ -169,7 +169,7 @@ async function pushCloud(){
  if(!cloudReady||!supabaseClient||!currentUserId)return;if(cloudBusy){cloudDirty=true;return}cloudBusy=true;
  try{do{cloudDirty=false;const d=toCloud();for(const table of ["categories","products","movements"])await syncCloudTable(table,d[table]);for(const table of ["movements","products","categories"]){const ids=S.deleted?.[table]||[];if(ids.length){const {error}=await supabaseClient.from(table).delete().eq("owner_id",currentUserId).in("id",ids);if(error)throw error;S.deleted[table]=[]}}}while(cloudDirty);
   for(const key of legacyKeysToClear){try{localStorage.removeItem(key)}catch(err){}}legacyKeysToClear=[];setCloudStatus("online","Online / Nuvem MN Tech");
- }catch(err){console.error("Supabase save:",err);setCloudStatus("offline","Sem conexão com a nuvem");toast("Não foi possível salvar. Verifique a conexão e tente novamente.")}finally{cloudBusy=false}
+ }catch(err){cloudDirty=true;console.error("Supabase save:",err);setCloudStatus("offline","Sem conexão com a nuvem");toast("Não foi possível salvar. Verifique a conexão e tente novamente.")}finally{cloudBusy=false}
 }
 async function pullCloud(){
  const [c,p,m]=await Promise.all([supabaseClient.from("categories").select("*").eq("owner_id",currentUserId),supabaseClient.from("products").select("*").eq("owner_id",currentUserId),supabaseClient.from("movements").select("*").eq("owner_id",currentUserId)]);
@@ -523,11 +523,11 @@ async function installAppAction(){
 for(const btn of installButtons){btn?.addEventListener("click",installAppAction)}
 updateInstallButton();
 window.addEventListener("online",async()=>{
- if(!cloudReady||!supabaseClient)return;setCloudStatus("pending","Reconectando à nuvem…");try{await pullCloud();render();setCloudStatus("online","Online / Nuvem MN Tech")}catch(err){setCloudStatus("offline","Sem conexão com a nuvem")}
+ if(!cloudReady||!supabaseClient)return;setCloudStatus("pending","Reconectando à nuvem…");try{if(cloudDirty)await pushCloud();else{await pullCloud();render()}setCloudStatus("online","Online / Nuvem MN Tech")}catch(err){setCloudStatus("offline","Sem conexão com a nuvem")}
 });
 document.addEventListener("visibilitychange",()=>{
- if(document.visibilityState==="visible"&&cloudReady&&supabaseClient){
-  pullCloud().then(()=>{render();setCloudStatus("online","Online / Nuvem MN Tech")}).catch(err=>{
+ if(document.visibilityState==="visible"&&cloudReady&&supabaseClient&&!cloudBusy){
+  (cloudDirty?pushCloud():pullCloud().then(()=>{render()})).then(()=>{setCloudStatus("online","Online / Nuvem MN Tech")}).catch(err=>{
    console.error("Falha ao atualizar estoque:",err);
    setCloudStatus("offline","Falha ao atualizar da nuvem");
   });
