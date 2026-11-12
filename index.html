@@ -86,8 +86,8 @@ input:focus,select:focus{outline:2px solid var(--bl);outline-offset:0}
 
 #cloudStatus{font-size:12px;color:var(--mu);display:inline-flex;align-items:center;gap:6px}
 #cloudStatus:before{content:"";width:8px;height:8px;border-radius:50%;background:var(--or);display:inline-block}
-#cloudStatus.online:before{background:var(--gr)}
-#cloudStatus.offline:before{background:var(--rd)}
+#cloudStatus.online{color:var(--gr);font-weight:700}#cloudStatus.online:before{background:var(--gr)}
+#cloudStatus.offline{color:var(--rd)}#cloudStatus.offline:before{background:var(--rd)}#cloudStatus.pending{color:var(--or)}
 .scan-btn{white-space:nowrap}
 #scannerVideo{width:100%;border-radius:14px;overflow:hidden}
 #scannerRegion{width:100%;min-height:220px;background:#05080f;border-radius:14px;overflow:hidden}
@@ -101,11 +101,11 @@ input:focus,select:focus{outline:2px solid var(--bl);outline-offset:0}
 <nav id="nav"></nav>
 <main>
  <header class="brand"><svg viewBox="0 0 40 48" fill="none" aria-label="MN Tech Cell"><defs><linearGradient id="lg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#00d2ff"/><stop offset="1" stop-color="#0088ff"/></linearGradient></defs><rect x="6" y="2" width="28" height="44" rx="7" stroke="url(#lg)" stroke-width="2.5"/><path d="M16 6h8" stroke="url(#lg)" stroke-width="2" stroke-linecap="round"/><circle cx="20" cy="26" r="8.5" stroke="url(#lg)" stroke-width="4" stroke-dasharray="3.3 3.3"/><circle cx="20" cy="26" r="6" stroke="url(#lg)" stroke-width="2.2"/><circle cx="20" cy="26" r="2.2" fill="#ffcc00"/></svg><div><b><span>MN</span> Tech</b><small>A Solução para o Seu Celular</small></div><button class="btn pri" id="installApp" type="button">⬇ Instalar app</button><a class="btn wa" href="https://wa.me/5511983482317?text=Ol%C3%A1%2C%20MN%20Tech%20Cell!" target="_blank" rel="noopener">💬 <span>WhatsApp</span></a></header>
- <div class="top"><h1 id="title"></h1><div style="display:flex;gap:8px;align-items:center"><span id="cloudStatus" class="offline">Offline/local</span><button class="btn" id="theme" title="Tema">◐</button><button class="btn pri" data-act="newp">+ Produto</button></div></div>
+ <div class="top"><h1 id="title"></h1><div style="display:flex;gap:8px;align-items:center"><span id="cloudStatus" class="pending">Conectando à Nuvem MN Tech…</span><button class="btn" id="theme" title="Tema">◐</button><button class="btn pri" data-act="newp">+ Produto</button></div></div>
  <div id="view"></div>
 </main>
 </div>
-<div id="modal"></div><div id="authGate"><form class="box" id="loginForm"><h2>Bem-vindo à MN Tech Cell</h2><p style="color:var(--mu);font-size:13px">Entre com seu e-mail e senha para acessar seu estoque e suas informações com segurança.</p><label style="font-size:12px;color:var(--mu)">E-mail</label><input id="loginEmail" type="email" autocomplete="username" required placeholder="seu@email.com"><label style="font-size:12px;color:var(--mu);display:block;margin-top:10px">Senha</label><input id="loginPassword" type="password" autocomplete="current-password" minlength="8" required placeholder="Mínimo de 8 caracteres"><p id="loginError" style="color:var(--rd);font-size:12px"></p><div class="row" style="flex-wrap:wrap"><button type="button" class="btn" id="installAppLogin">⬇ Instalar aplicativo</button><button type="button" class="btn" id="offlineMode">Usar sem conta neste aparelho</button><button class="btn" type="submit" value="signup" name="authMode">Criar minha conta</button><button class="btn pri" type="submit" value="signin" name="authMode">Entrar</button></div></form></div><div id="toast"></div><div id="scannerModal" class="on" style="display:none;position:fixed;inset:0;background:rgba(5,8,15,.82);z-index:100;align-items:center;justify-content:center;padding:16px"><div class="box" style="max-width:520px"><h2>📷 Ler código</h2><div id="scannerRegion"></div><p class="scan-help">Aponte a câmara traseira para o código de barras ou QR Code. Permita o acesso à câmara quando solicitado.</p><div class="row"><button class="btn" id="stopScanner">Cancelar</button></div></div></div>
+<div id="modal"></div><div id="authGate"><form class="box" id="loginForm"><h2>Bem-vindo à MN Tech Cell</h2><p style="color:var(--mu);font-size:13px">Entre com seu e-mail e senha para acessar seu estoque e suas informações com segurança.</p><label style="font-size:12px;color:var(--mu)">E-mail</label><input id="loginEmail" type="email" autocomplete="username" required placeholder="seu@email.com"><label style="font-size:12px;color:var(--mu);display:block;margin-top:10px">Senha</label><input id="loginPassword" type="password" autocomplete="current-password" minlength="8" required placeholder="Mínimo de 8 caracteres"><p id="loginError" style="color:var(--rd);font-size:12px"></p><div class="row" style="flex-wrap:wrap"><button type="button" class="btn" id="installAppLogin">⬇ Instalar aplicativo</button><button class="btn" type="submit" value="signup" name="authMode">Criar minha conta</button><button class="btn pri" type="submit" value="signin" name="authMode">Entrar</button></div></form></div><div id="toast"></div><div id="scannerModal" class="on" style="display:none;position:fixed;inset:0;background:rgba(5,8,15,.82);z-index:100;align-items:center;justify-content:center;padding:16px"><div class="box" style="max-width:520px"><h2>📷 Ler código</h2><div id="scannerRegion"></div><p class="scan-help">Aponte a câmara traseira para o código de barras ou QR Code. Permita o acesso à câmara quando solicitado.</p><div class="row"><button class="btn" id="stopScanner">Cancelar</button></div></div></div>
 <script defer src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 <!-- Supabase SDK carregado com fallback para não bloquear a abertura do aplicativo. -->
 <script defer src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -129,24 +129,18 @@ const SUPABASE_URL = "https://jryfuvkkxmuyxkialkkk.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_YU3tqPIPK9LLIxwPSui79Q_l8sblu8q";
 let supabaseClient = null, cloudReady = false, cloudBusy = false, cloudTimer = null;
 let currentUserId = null, localDataKey = KEY;
-function load(key=KEY){try{const r=localStorage.getItem(key);return r?JSON.parse(r):null}catch(e){return null}}
-function save(){
- try{localStorage.setItem(localDataKey,JSON.stringify(S))}catch(e){toast("Não foi possível salvar localmente")}
- if(cloudReady){clearTimeout(cloudTimer);cloudTimer=setTimeout(pushCloud,500)}
+// Estoque e financeiro são mantidos no Supabase. A leitura local existe
+// exclusivamente para importar uma única vez dados de versões antigas.
+let cloudDirty=false, legacyKeysToClear=[];
+function readLegacyData(userId){
+ const keys=[KEY+":"+userId,KEY],found=[];
+ for(const key of keys){try{const raw=localStorage.getItem(key);if(raw){const data=JSON.parse(raw);if(data&&Array.isArray(data.products))found.push({key,data})}}catch(err){console.warn("Falha ao ler dados antigos",err)}}
+ legacyKeysToClear=found.map(x=>x.key);if(!found.length)return null;
+ const out={cats:[],products:[],moves:[],deleted:{categories:[],products:[],movements:[]}};
+ for(const {data} of found){for(const k of ["cats","products","moves"])for(const row of(data[k]||[]))if(!out[k].some(x=>x.id===row.id))out[k].push(row);for(const k of ["categories","products","movements"])out.deleted[k].push(...(data.deleted?.[k]||[]))}
+ out.cats=out.cats.filter(x=>!out.deleted.categories.includes(x.id));out.products=out.products.filter(x=>!out.deleted.products.includes(x.id));out.moves=out.moves.filter(x=>!out.deleted.movements.includes(x.id));return out;
 }
-function useAccountStorage(userId){
- const accountKey=KEY+":"+userId;
- const accountData=load(accountKey);
- if(accountData){S=accountData}
- else{
-  const legacy=load(KEY);
-  S=legacy||seed();
-  localStorage.setItem(accountKey,JSON.stringify(S));
-  if(legacy)localStorage.removeItem(KEY);
- }
- localDataKey=accountKey;
- if(!S.deleted)S.deleted={categories:[],products:[],movements:[]};
-}
+function save(){if(!cloudReady||!currentUserId){toast("Entre na conta para salvar na nuvem");return}cloudDirty=true;setCloudStatus("pending","Salvando na nuvem MN Tech…");clearTimeout(cloudTimer);cloudTimer=setTimeout(()=>pushCloud(),250)}
 function cloudConfigured(){
  return SUPABASE_URL.startsWith("https://") &&
         !SUPABASE_URL.includes("SEU-PROJETO") &&
@@ -157,70 +151,42 @@ function setCloudStatus(state,label){
  const el=$("#cloudStatus");if(!el)return;
  el.className=state;el.textContent=label;
 }
-const toCloud = () => ({
- categories:S.cats.map(c=>({id:c.id,owner_id:currentUserId,name:c.name,parent_id:c.parent||null})),
- products:S.products.map(p=>({id:p.id,owner_id:currentUserId,name:p.name,category_id:p.cat||null,sku:p.sku||null,qty:p.qty,min_qty:p.min,cost_price:p.cost,sale_price:p.price})),
- movements:S.moves.map(m=>({id:m.id,owner_id:currentUserId,product_id:m.pid,type:m.type,qty:m.qty,cost_price:m.cost||0,sale_price:m.val||0,timestamp:new Date(m.ts).toISOString()}))
+const toCloud=()=>({
+ categories:S.cats.map(c=>({id:String(c.id),owner_id:currentUserId,name:c.name,parent_id:c.parent||null})),
+ products:S.products.map(p=>({id:String(p.id),owner_id:currentUserId,name:p.name,category_id:p.cat||null,sku:p.sku||null,qty:p.qty,min_qty:p.min,cost_price:p.cost,sale_price:p.price})),
+ movements:S.moves.map(m=>({id:String(m.id),owner_id:currentUserId,product_id:m.pid,type:m.type,qty:m.qty,cost_price:m.cost||0,sale_price:m.val||0,timestamp:new Date(m.ts).toISOString()}))
 });
+const cloudFields={categories:["id","owner_id","name","parent_id"],products:["id","owner_id","name","category_id","sku","qty","min_qty","cost_price","sale_price"],movements:["id","owner_id","product_id","type","qty","cost_price","sale_price","timestamp"]};
+function sameCloudRow(a,b,fields){return fields.every(k=>k==="timestamp"?new Date(a[k]).getTime()===new Date(b[k]).getTime():String(a[k]??"")===String(b[k]??""))}
+async function syncCloudTable(table,rows){
+ const {data:remote,error}=await supabaseClient.from(table).select("*").eq("owner_id",currentUserId);if(error)throw error;
+ const byId=new Map((remote||[]).map(x=>[String(x.id),x])),inserts=[],updates=[];
+ for(const row of rows){const old=byId.get(String(row.id));if(!old)inserts.push(row);else if(!sameCloudRow(old,row,cloudFields[table]))updates.push(row)}
+ if(inserts.length){const {error:e}=await supabaseClient.from(table).insert(inserts);if(e)throw e}
+ for(const row of updates){const {error:e}=await supabaseClient.from(table).update(row).eq("id",row.id).eq("owner_id",currentUserId);if(e)throw e}
+}
 async function pushCloud(){
- if(!cloudReady||cloudBusy||!supabaseClient)return;
- cloudBusy=true;
- try{
-  const d=toCloud();
-  // Upsert por conta. Não apaga registros remotos com base em uma cópia local possivelmente desatualizada.
-  for(const table of ["categories","products","movements"]){
-   const rows=d[table];
-   if(rows.length){
-    const {error}=await supabaseClient.from(table).upsert(rows,{onConflict:"id"});
-    if(error)throw error;
-   }
-  }
-  for(const table of ["movements","products","categories"]){
-   const ids=S.deleted?.[table]||[];
-   if(ids.length){
-    const {error}=await supabaseClient.from(table).delete().eq("owner_id",currentUserId).in("id",ids);
-    if(error)throw error;
-    S.deleted[table]=[];
-   }
-  }
-  localStorage.setItem(localDataKey,JSON.stringify(S));
-  setCloudStatus("online","☁ Sincronizado");
- }catch(err){
-  console.error("Supabase sync:",err);setCloudStatus("offline","Offline · salvo neste aparelho");
- }finally{cloudBusy=false}
+ if(!cloudReady||!supabaseClient||!currentUserId)return;if(cloudBusy){cloudDirty=true;return}cloudBusy=true;
+ try{do{cloudDirty=false;const d=toCloud();for(const table of ["categories","products","movements"])await syncCloudTable(table,d[table]);for(const table of ["movements","products","categories"]){const ids=S.deleted?.[table]||[];if(ids.length){const {error}=await supabaseClient.from(table).delete().eq("owner_id",currentUserId).in("id",ids);if(error)throw error;S.deleted[table]=[]}}}while(cloudDirty);
+  for(const key of legacyKeysToClear){try{localStorage.removeItem(key)}catch(err){}}legacyKeysToClear=[];setCloudStatus("online","Online / Nuvem MN Tech");
+ }catch(err){console.error("Supabase save:",err);setCloudStatus("offline","Sem conexão com a nuvem");toast("Não foi possível salvar. Verifique a conexão e tente novamente.")}finally{cloudBusy=false}
 }
 async function pullCloud(){
- const [c,p,m]=await Promise.all([
-  supabaseClient.from("categories").select("*").eq("owner_id",currentUserId),
-  supabaseClient.from("products").select("*").eq("owner_id",currentUserId),
-  supabaseClient.from("movements").select("*").eq("owner_id",currentUserId)
- ]);
+ const [c,p,m]=await Promise.all([supabaseClient.from("categories").select("*").eq("owner_id",currentUserId),supabaseClient.from("products").select("*").eq("owner_id",currentUserId),supabaseClient.from("movements").select("*").eq("owner_id",currentUserId)]);
  if(c.error)throw c.error;if(p.error)throw p.error;if(m.error)throw m.error;
- if((c.data||[]).length||(p.data||[]).length||(m.data||[]).length){
-  S={
-   cats:(c.data||[]).map(x=>({id:x.id,name:x.name,parent:x.parent_id||null})),
-   products:(p.data||[]).map(x=>({id:x.id,name:x.name,cat:x.category_id||null,sku:x.sku||"",qty:Number(x.qty)||0,min:Number(x.min_qty)||0,cost:Number(x.cost_price)||0,price:Number(x.sale_price)||0})),
-   moves:(m.data||[]).map(x=>({id:x.id,pid:x.product_id,type:x.type,qty:Number(x.qty)||0,cost:Number(x.cost_price)||0,val:Number(x.sale_price)||0,ts:new Date(x.timestamp).getTime()}))
-  };
-  localStorage.setItem(localDataKey,JSON.stringify(S));
- }else{
-  // Primeira sincronização: publica os dados locais/demonstração já existentes.
-  await pushCloud();
- }
+ const cats=(c.data||[]).map(x=>({id:x.id,name:x.name,parent:x.parent_id||null})),products=(p.data||[]).map(x=>({id:x.id,name:x.name,cat:x.category_id||null,sku:x.sku||"",qty:+x.qty||0,min:+x.min_qty||0,cost:+x.cost_price||0,price:+x.sale_price||0})),moves=(m.data||[]).map(x=>({id:x.id,pid:x.product_id,type:x.type,qty:+x.qty||0,cost:+x.cost_price||0,val:+x.sale_price||0,ts:new Date(x.timestamp).getTime()}));
+ const legacy=readLegacyData(currentUserId);
+ if(legacy&&!products.length&&!moves.length){S={cats:[...cats,...legacy.cats.filter(x=>!cats.some(y=>y.id===x.id))],products:legacy.products,moves:legacy.moves,deleted:legacy.deleted};cloudDirty=true;await pushCloud()}
+ else{S={cats,products,moves,deleted:{categories:[],products:[],movements:[]}};if(!cats.length&&!products.length&&!moves.length){S=seed();S.deleted={categories:[],products:[],movements:[]};cloudDirty=true;await pushCloud()}}
 }
 async function connectCloud(){
- const {data:sessionData,error:sessionError}=await supabaseClient.auth.getSession();
- if(sessionError)throw sessionError;
- currentUserId=sessionData.session?.user?.id;
- if(!currentUserId)throw new Error("Entre na sua conta para sincronizar.");
- useAccountStorage(currentUserId);
- cloudReady=true;await pullCloud();setCloudStatus("online","☁ Sincronizado");document.body.classList.add("app-ready");$("#authGate").classList.remove("on");render();
- supabaseClient.channel("mn-tech-cell-live")
-  .on("postgres_changes",{event:"*",schema:"public",table:"categories"},()=>refreshFromRealtime())
-  .on("postgres_changes",{event:"*",schema:"public",table:"products"},()=>refreshFromRealtime())
-  .on("postgres_changes",{event:"*",schema:"public",table:"movements"},()=>refreshFromRealtime())
-  .subscribe();
+ const {data,error}=await supabaseClient.auth.getSession();if(error)throw error;currentUserId=data.session?.user?.id;if(!currentUserId)throw new Error("Entre na sua conta para sincronizar.");
+ cloudReady=true;await pullCloud();setCloudStatus("online","Online / Nuvem MN Tech");document.body.classList.add("app-ready");$("#authGate").classList.remove("on");render();
+ supabaseClient.channel("mn-tech-cell-live-"+currentUserId).on("postgres_changes",{event:"*",schema:"public",table:"categories",filter:"owner_id=eq."+currentUserId},refreshFromRealtime).on("postgres_changes",{event:"*",schema:"public",table:"products",filter:"owner_id=eq."+currentUserId},refreshFromRealtime).on("postgres_changes",{event:"*",schema:"public",table:"movements",filter:"owner_id=eq."+currentUserId},refreshFromRealtime).subscribe(status=>{if(status==="SUBSCRIBED")setCloudStatus("online","Online / Nuvem MN Tech");else if(status==="CHANNEL_ERROR"||status==="TIMED_OUT")setCloudStatus("offline","Reconectando à nuvem…")});
 }
+let realtimeRefreshTimer=null;
+function refreshFromRealtime(){if(realtimeRefreshTimer||cloudDirty||cloudBusy)return;realtimeRefreshTimer=setTimeout(async()=>{realtimeRefreshTimer=null;if(!cloudReady||cloudDirty||cloudBusy)return;try{await pullCloud();render();setCloudStatus("online","Online / Nuvem MN Tech")}catch(err){console.error("Realtime:",err);setCloudStatus("offline","Falha ao atualizar da nuvem")}},500)}
+S=seed();
 async function waitForSupabase(){
  if(window.supabase?.createClient)return true;
  const sources=[
@@ -252,9 +218,9 @@ async function initCloud(){
   $("#authGate").classList.add("on");
   setCloudStatus("","Verificando acesso…");
   const {data,error}=await supabaseClient.auth.getSession();if(error)throw error;
-  if(data.session){await connectCloud()}else{setCloudStatus("offline","Entre para sincronizar");$("#authGate").classList.add("on")}
+  if(data.session){await connectCloud()}else{setCloudStatus("offline","Aguardando acesso à nuvem");$("#authGate").classList.add("on")}
   supabaseClient.auth.onAuthStateChange((event,session)=>{
-   if(event==="SIGNED_OUT"){cloudReady=false;setCloudStatus("offline","Sessão encerrada · local")}
+   if(event==="SIGNED_OUT"){cloudReady=false;setCloudStatus("offline","Sessão encerrada")}
   });
  }catch(err){
   console.error("Supabase:",err);cloudReady=false;
@@ -263,17 +229,8 @@ async function initCloud(){
   $("#loginError").textContent=err?.message||"Não foi possível conectar à nuvem. Verifique a internet e tente novamente.";
  }
 }
-let realtimeRefreshTimer=null;
-function refreshFromRealtime(){
- if(realtimeRefreshTimer)return;
- realtimeRefreshTimer=setTimeout(async()=>{
-  realtimeRefreshTimer=null;
-  if(!supabaseClient||cloudBusy)return;
-  try{await pullCloud();render();setCloudStatus("online","☁ Sincronizado")}
-  catch(err){console.error(err);setCloudStatus("offline","Offline · dados locais")}
- },700);
-}
-S=load()||seed();
+
+S=seed();
 
 const catName=id=>{const c=S.cats.find(c=>c.id===id);if(!c)return"—";const p=c.parent&&S.cats.find(x=>x.id===c.parent);return p?p.name+" › "+c.name:c.name};
 const lastOut=id=>S.moves.filter(m=>m.pid===id&&m.type==="out").reduce((a,m)=>Math.max(a,m.ts),0);
@@ -501,7 +458,7 @@ document.addEventListener("click",e=>{const t=e.target.closest("button,#modal");
  else if(d.delp){if(confirm("Excluir este produto e seu histórico de movimentações?")){S.deleted=S.deleted||{categories:[],products:[],movements:[]};S.deleted.products.push(d.delp);S.deleted.movements.push(...S.moves.filter(m=>m.pid===d.delp).map(m=>m.id));S.products=S.products.filter(p=>p.id!==d.delp);S.moves=S.moves.filter(m=>m.pid!==d.delp);save();closeM();render()}}
  else if(d.domove){const[a,b]=d.domove.split("|");doMove(a,b)}
  else if("savec"in d){const n=$("#cn").value.trim();if(!n)return toast("Informe o nome");S.cats.push({id:uid(),name:n,parent:$("#cp").value||null});save();closeM();render();toast("Categoria criada ✓")}
- else if(d.delc){if(catUsed(d.delc))return toast("Há produtos nesta categoria");S.cats=S.cats.filter(c=>c.id!==d.delc&&c.parent!==d.delc);save();render()}
+ else if(d.delc){if(catUsed(d.delc))return toast("Há produtos nesta categoria");S.deleted=S.deleted||{categories:[],products:[],movements:[]};S.deleted.categories.push(d.delc);S.deleted.categories.push(...S.cats.filter(c=>c.parent===d.delc).map(c=>c.id));S.cats=S.cats.filter(c=>c.id!==d.delc&&c.parent!==d.delc);save();render()}
  else if(t.id==="theme"){const r=document.documentElement,dark=getComputedStyle(r).colorScheme==="dark";r.dataset.theme=dark?"light":"dark"}
 });
 render();
@@ -532,7 +489,7 @@ $("#loginForm").addEventListener("submit",async e=>{
   }
  }catch(err){errEl.textContent=err.message||"Não foi possível concluir"}
 });
-$("#offlineMode").addEventListener("click",()=>{$("#authGate").classList.remove("on");document.body.classList.add("app-ready");setCloudStatus("offline","Modo local · sem nuvem")});
+
 $("#stopScanner").addEventListener("click",stopScan);
 $("#stockImport")?.addEventListener("change",e=>{const file=e.target.files?.[0];if(file)importStockCSV(file)});
 let deferredInstallPrompt=null;
@@ -565,16 +522,14 @@ async function installAppAction(){
 }
 for(const btn of installButtons){btn?.addEventListener("click",installAppAction)}
 updateInstallButton();
-window.addEventListener("online",()=>{
- if(!cloudReady||!supabaseClient)return;
- setCloudStatus("","Reconectando…");
- pushCloud();
+window.addEventListener("online",async()=>{
+ if(!cloudReady||!supabaseClient)return;setCloudStatus("pending","Reconectando à nuvem…");try{await pullCloud();render();setCloudStatus("online","Online / Nuvem MN Tech")}catch(err){setCloudStatus("offline","Sem conexão com a nuvem")}
 });
 document.addEventListener("visibilitychange",()=>{
  if(document.visibilityState==="visible"&&cloudReady&&supabaseClient){
-  pullCloud().then(()=>{render();setCloudStatus("online","☁ Sincronizado")}).catch(err=>{
+  pullCloud().then(()=>{render();setCloudStatus("online","Online / Nuvem MN Tech")}).catch(err=>{
    console.error("Falha ao atualizar estoque:",err);
-   setCloudStatus("offline","Offline · dados locais");
+   setCloudStatus("offline","Falha ao atualizar da nuvem");
   });
  }
 });
